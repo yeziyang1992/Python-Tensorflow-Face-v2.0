@@ -281,7 +281,7 @@ class LfwPlot:
 
     @staticmethod
     def __pos_reader(margin):
-        csv_test_reader = csv.reader(open('./temp/lfw/result/.csv', encoding='utf-8'))
+        csv_test_reader = csv.reader(open('./temp/lfw/result/pos.csv', encoding='utf-8'))
         test_num = 0  # 测试集
         test = 0  # 超出阈值的个数
         for row in csv_test_reader:
