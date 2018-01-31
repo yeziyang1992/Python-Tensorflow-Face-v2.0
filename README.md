@@ -5,4 +5,24 @@
   3.1. 首先运行get_align_face.py文件。生成对齐过的人脸训练数据。  
   3.2. 运行run_new.py文件，会出现 “我们发现模型，是否需要预训练 [yes/no]?”第一次训练输入no，按回车，即开始训练。这样做的目的是可以间断训练，每次训练完一段时间退出，可以接着训练。   
   3.3. 训练完成后，首先改lfw_test.py中的Flag=0,然后运行，运行完成后改Falg=3,再运行，即可看到准确率的表格。
+4. 文件夹结构：
+    - face_lib
+         * ...
+    - model
+         - random
+             * ...
+         - traversal
+             * ...
+    - out
+         - random
+             * ...
+         - traversal
+             * ...
+    - temp
+         - lfw
+              - lfw
+              - lfw_test
+              - result
+    - train_faces
+         * ...
 
