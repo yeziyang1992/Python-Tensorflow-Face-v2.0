@@ -3,7 +3,7 @@ import os
 
 from face_lib import my_api
 
-input_dir = './temp/lfw/lfw'  # 输入的人脸图片数据集
+input_dir = './out'  # 输入的人脸图片数据集
 output_dir = './train_faces'  # 输出的图片总目录
 # 如果不存在目录 就创造目录
 if not os.path.exists(output_dir):
@@ -13,7 +13,7 @@ if not os.path.exists(output_dir):
 if __name__ == '__main__':
     get_face = my_api.GetAlignedFace(input_dir, output_dir)
     # 开启多进程
-    pool = multiprocessing.Pool(processes=4)
+    pool = multiprocessing.Pool(processes=6)
     photo_names = get_face.pic_names
     print(photo_names)
     pic_num = 0  # 已存在的图片目录总数

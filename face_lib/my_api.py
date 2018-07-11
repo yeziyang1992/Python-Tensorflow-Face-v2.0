@@ -56,83 +56,67 @@ class GetAlignedFace:
                     index += 1
 
 
-class Traversal:
-
-    @staticmethod
-    # 读取一个文件夹 返回标签数(文件夹数)、图片数组和图片id
-    def get_triplet_data(path):
-        max_num = len(os.listdir(path))  # 获取人脸标签数
-        face_array = [[] for n in range(max_num)]  # 初始化二维数组
-        id_array = [[] for n in range(max_num)]  # 初始化二维数组
-        for i, filename in enumerate(os.listdir(path)):
-            for j, img_name in enumerate(os.listdir(path + filename)):
-                if img_name.endswith('.jpg'):
-                    path_name = path + filename + '/' + img_name
-                    img = cv2.imread(path_name)
-                    img = np.array(img)
-                    face_array[i].append(img.astype('float32') / 255.0)   # 归一化
-                    id_array[i].append(j)
-        return max_num, face_array, id_array
-
-    @staticmethod
-    # 以遍历方式生成3元组训练数据
-    def generate_train_data(image_array, num, csv_file):
-        per_data = []
-        out = open(csv_file, 'w', newline='')
-        csv_writer = csv.writer(out, dialect='excel')
-        for i in range(num):
-            if len(image_array[i]) == 1:            # 一个标签只有一种照片的情况
-                per_data.clear()
-                per_data.append(str(i)+'_'+str(image_array[i][0]))
-                per_data.append(str(i)+'_'+str(image_array[i][0]))   # 加2次 防止图片只有一张时，无法形成三元组
-                for n in range(num):
-                    if n == i:                       # 防止出现3张图片都属于同一类
-                        break
-                    for data in image_array[n]:
-                        per_data.append((str(n)+'_'+str(data)))
-                        csv_writer.writerow(tuple(per_data))
-                        per_data.pop()
-
-            elif len(image_array[i]) >= 2:              # 一个标签有多种照片的情况
-                for data_list in itertools.combinations(image_array[i], 2):
-                    per_data.clear()
-                    per_data.append(str(i)+'_'+str(list(data_list)[0]))
-                    per_data.append(str(i)+'_'+str(list(data_list)[1]))
-                    for n in range(num):
-                        if n != i:                       # 防止出现3张图片都属于同一类
-                            for data in image_array[n]:
-                                per_data.append((str(n)+'_'+str(data)))
-                                csv_writer.writerow(tuple(per_data))
-                                per_data.pop()
-
-
 class Random:
     @staticmethod
-    def generate_train_data(image_array, num):
+    #输出图片数据，归一化
+    def get_image_array(path):
+        img = cv2.imread(path)
+        img = np.array(img)
+        return img.astype('float32') / 255.0
+
+    @staticmethod
+    # 读取一个文件夹 返回标签数(文件夹数)、图片路径
+    # def get_triplet_data(path):
+    #     max_num = len(os.listdir(path))  # 获取人脸标签数
+    #     face_array = [[] for n in range(max_num)]  # 初始化二维数组 
+    #     for i, filename in enumerate(os.listdir(path)):
+    #         for _, img_name in enumerate(os.listdir(path + filename)):
+    #             if img_name.endswith('.jpg'):
+    #                 path_name = path + filename + '/' + img_name
+    #                 face_array[i].append(path_name)
+    #     return max_num, face_array
+    
+    def get_triplet_data(path):
+        max_num = len(os.listdir(path))  # 获取人脸标签数
+        face_array = []  # 初始化二维数组 
+        id_array=[]
+        for i, filename in enumerate(os.listdir(path)):
+            for _, img_name in enumerate(os.listdir(path + filename)):
+                if img_name.endswith('.jpg'):
+                    path_name = path + filename + '/' + img_name
+                    id_array.append(path_name)
+            face_array.append(id_array)
+            id_array=[]
+        return max_num, face_array
+    
+    @staticmethod
+    # 以随机方式生成3元组训练数据
+    def generate_train_data(image_path, num):
         per_data = []
         p = None
         train_data = []
         for i in range(num):
             per_data.clear()
-            temp_x = image_array[i]
-            random.shuffle(temp_x)
+            temp_x = image_path[i]
+            random.shuffle(temp_x)    #打乱排序
+
             if len(temp_x) == 1:
-                per_data.append(str(i)+'_'+str(temp_x[0]))
-                per_data.append(str(i)+'_'+str(temp_x[0]))   # 加2次 防止图片只有一张时，无法形成三元组
+                per_data.append(str(temp_x[0]))
+                per_data.append(str(temp_x[0]))   # 加2次 防止图片只有一张时，无法形成三元组
             elif len(temp_x) >= 2:
-                per_data.append(str(i)+'_'+str(temp_x[1]))
-                per_data.append(str(i)+'_'+str(temp_x[0]))   # 加2次 防止图片只有一张时，无法形成三元组
+                per_data.append(str(temp_x[-1]))
+                per_data.append(str(temp_x[0]))   # 取2张相同照片
             else:
                 continue
 
             flag = True
             while flag:
                 p = random.randint(0, num-1)      # 取第3张图片,且与前2张不属于同一类
-                if p != i and len(image_array[p]) != 0:
+                if p != i and len(image_path[p]) != 0:
                     flag = False
-            temp_y = image_array[p]
+            temp_y = image_path[p]
             random.shuffle(temp_y)
-            per_data.append(str(p) + '_' + str(temp_y[0]))
+            per_data.append(str(temp_y[0]))
             train_data.append(tuple(per_data))
         random.shuffle(train_data)
         return train_data
@@ -176,12 +160,8 @@ class LfwTest:
     def get_pair_image(self, pair):
         detector = align_dlib.AlignDlib(self.PREDICTOR_PATH)
         x, y = pair
-        print(x)
-        print(y)
         path_name_x = self.path + self.path_array[x-1]
         path_name_y = self.path + self.path_array[y-1]
-        print(path_name_x)
-        print(path_name_y)
         x_img = self.get_one_image(x, detector)
         y_img = self.get_one_image(y, detector)
         return x_img, y_img
@@ -219,53 +199,59 @@ class LfwTest:
 
 class LfwPlot:
     def __init__(self):
-        plt.figure(1)
+        self.margin = 5.0
+        self.x_data=[]
+        self.y1_data = []
+        self.y2_data = []
+        self.y3_data = []
 
-    def neg_cac(self):
-        x_data = []
-        y1_data = []
-        margin = 5
-        for i in range(500):
-            x = margin + 0.2 * i
-            test_num, test = self.__neg_reader(x)
-            try:
-                p1 = test / test_num  # 总的准确率
-            except ZeroDivisionError:
-                p1 = 0
-
-            x_data.append(x)
-            y1_data.append(p1)
-        # 画图
-        plt.subplot(211)  # the first subplot in the first figure
-        plt.plot(x_data, y1_data, 'r-', lw=1, label="$p1$")
-        plt.title("negative_pairs")
-        plt.ylabel("p")
-        plt.grid(True)
-        plt.legend()
-
-    def pos_cac(self):
-        x_data = []
-        y1_data = []
-        margin = 5
-        for i in range(500):
-            x = margin + 0.2 * i
+    def plot(self):
+        for i in range(1000):
+            x = 0.002 * i
+            test_num, neg = self.__neg_reader(x)
             train_num, pos = self.__pos_reader(x)
             try:
-                p1 = pos / train_num  # 总的准确率
+                p1 = neg / test_num  # 总的准确率
+                p2 = pos / train_num  # 总的准确率
+                p3 = 2*p1*p2/(p1+p2)
             except ZeroDivisionError:
                 p1 = 0
-            x_data.append(x)
-            y1_data.append(p1)
+                p2 = 0
+                p3 = 0
 
+            self.x_data.append(x)
+            self.y1_data.append(p1)
+            self.y2_data.append(p2)
+            self.y3_data.append(p3)
         # 画图
-        plt.subplot(212)  # the second subplot in the first figure
-        plt.plot(x_data, y1_data, 'r-', lw=1, label="$p1$")
-        plt.title("positive_pairs")
-        plt.xlabel("margin")
-        plt.ylabel("p")
-        plt.grid(True)
-        plt.legend()
+        plt.plot(self.x_data, self.y1_data, 'r-', lw=1, label="$negative pairs$")
+        plt.plot(self.x_data, self.y2_data, 'b-', lw=1, label="$positive pairs$")
+        f1score = round(max(self.y3_data),4)
+        plt.plot(self.x_data, self.y3_data, 'g-', lw=3, label="$F1 score: $"+str(f1score))
+        plt.legend(loc='best') 
+        plt.xlabel('margin')
+        plt.ylabel('p')
+        plt.title("lfw_test")
+        plt.grid()
         plt.show()
+
+    def calulate(self):
+        data = []
+        for i in range(1000):
+            x = 0.004 * i
+            test_num, neg = self.__neg_reader(x)
+            train_num, pos = self.__pos_reader(x)
+            try:
+                p1 = neg / test_num  # 总的准确率
+                p2 = pos / train_num  # 总的准确率
+                p3 = 2*p1*p2/(p1+p2)
+            except ZeroDivisionError:
+                p1 = 0
+                p2 = 0
+                p3 = 0
+            data.append(p3)
+        f1score = round(max(data),4)
+        return f1score
 
     @staticmethod
     def __neg_reader(margin):
