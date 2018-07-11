@@ -11,5 +11,6 @@
   3.2. 在[链接](https://pan.baidu.com/s/1F6w8JIzg6o61D2sNmJ9tLw)( 密码：8tgk)下载LFW数据集，放在 ./temp/lfw/文件夹下，最后的目录是./tmp/lfw/lfw。这是为了测试准确率。
   3.2. 运行run.py文件，如果想要继续接着训练,需要把new改为True.这样做的目的是可以间断训练，每次训练完一段时间退出，可以接着训练。   
   3.3. 训练完成后，可以运行lfw_test.py文件查看准确率。
-7. 如有问题探讨，邮箱联系：yeziyang1992@163.com
+7. 训练好的模型可以放到这个项目中https://github.com/yeziyang1992/Face_Recognition_Client  检验。
+8. 如有问题探讨，邮箱联系：yeziyang1992@163.com
 
